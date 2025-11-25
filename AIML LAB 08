@@ -1,0 +1,69 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import linprog
+from mpl_toolkits.mplot3d import Axes3D
+
+c = [-30, -20]
+
+A = [
+    [2, 3],
+    [3, 2]
+]
+
+b = [100, 90]
+
+x_bounds = (0, None)
+bounds = [x_bounds ,x_bounds]
+
+result = linprog(c, A_ub=A, b_ub=b, bounds=bounds, method='highs')
+
+if result.success:
+    x1, x2 = result.x
+    print("Optimization Successful!")
+    print(f"Optimal Production of Product A: {x1:.2f} units")
+    print(f"Optimal Production of Product B: {x2:.2f} units")
+    print(f"Maximum Profit: ₹{(-result.fun):.2f}")
+else:
+    print("Optimization Failed:", result.message)
+
+x = np.linspace(0, 50, 200)
+y1 = (100 - 2*x) / 3
+y2 = (90 - 3*x) / 2
+
+plt.figure(figsize=(8,6))
+y3 = np.minimum(y1, y2)
+y3[y3 < 0] = np.nan
+
+plt.fill_between(x, y3, color='lightgreen', alpha=0.4, label="Feasible Region")
+plt.plot(x, y1, color='red', label=r'2x₁ + 3x₂ ≤ 100')
+plt.plot(x, y2, color='blue', label=r'3x₁ + 2x₂ ≤ 90')
+plt.scatter(x1, x2, color='black', s=200, marker='*', label='Optimal Point')
+plt.xlabel("Product A (x₁)")
+plt.ylabel("Product B (x₂)")
+plt.title("2D Feasible Region for Resource Allocation")
+plt.legend()
+plt.grid(True)
+plt.show()
+
+X, Y = np.meshgrid(np.linspace(0, 50, 100), np.linspace(0, 50, 100))
+Z = 30*X + 20*Y
+
+Z[(2*X + 3*Y > 100) | (3*X + 2*Y > 90)] = np.nan
+
+fig = plt.figure(figsize=(10,7))
+ax = fig.add_subplot(111, projection='3d')
+
+surf = ax.plot_surface(X, Y, Z, cmap='viridis', alpha=0.9, edgecolor='none')
+fig.colorbar(surf, ax=ax, shrink=0.5, aspect=10, label="Profit (₹)")
+
+ax.plot(x, y1, 0, color='red', linewidth=2, label=r'Labor Constraint')
+ax.plot(x, y2, 0, color='blue', linewidth=2, label=r'Material Constraint')
+
+ax.scatter(x1, x2, 30*x1 + 20*x2, color='black', s=100, marker='*', label='Optimal Solution')
+
+ax.set_xlabel("Product A (x₁)")
+ax.set_ylabel("Product B (x₂)")
+ax.set_zlabel("Profit (₹)")
+ax.set_title("3D Profit Surface with Constraints")
+ax.legend()
+plt.show()
