@@ -1,0 +1,88 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+
+iris = load_iris()
+X = iris.data
+y = iris.target.reshape(-1,1)
+
+encoder =OneHotEncoder(sparse_output=False)
+y = encoder.fit_transform(y)
+
+scaler = StandardScaler()
+X = scaler.fit_transform(X)
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+def sigmoid(z):
+    return 1 / (1 + np.exp(-z))
+
+def sigmoid_derivative(a):
+    return a * (1 - a)
+
+def softmax(z):
+    exp = np.exp(z - np.max(z))
+    return exp / np.sum(exp, axis=1, keepdims=True)
+
+input_dim = X_train.shape[1]
+hidden_dim = 8
+output_dim = y_train.shape[1]
+learning_rate = 0.1
+epochs = 500
+
+np.random.seed(42)
+W1 = np.random.randn(input_dim, hidden_dim)
+b1 = np.zeros((1, hidden_dim))
+W2 = np.random.randn(hidden_dim, output_dim)
+b2 = np.zeros((1, output_dim))
+
+losses = []
+
+for epoch in range(epochs):
+
+    Z1 = np.dot(X_train, W1) + b1
+    A1 = sigmoid(Z1)
+    Z2 = np.dot(A1, W2) + b2
+    A2 = softmax(Z2)
+
+    loss = -np.mean(np.sum(y_train * np.log(A2 + 1e-8), axis=1))
+    losses.append(loss)
+
+    dZ2 = A2 - y_train
+    dW2 = np.dot(A1.T, dZ2) / X_train.shape[0]
+    db2 = np.sum(dZ2, axis=0, keepdims=True) / X_train.shape[0]
+
+    dA1 = np.dot(dZ2, W2.T)
+    dZ1 = dA1 * sigmoid_derivative(A1)
+    dW1 = np.dot(X_train.T, dZ1) / X_train.shape[0]
+    db1 = np.sum(dZ1, axis=0, keepdims=True) / X_train.shape[0]
+
+    W1 -= learning_rate * dW1
+    b1 -= learning_rate * db1
+    W2 -= learning_rate * dW2
+    b2 -= learning_rate * db2
+
+    if (epoch + 1) % 100 == 0:
+        print(f"Epoch {epoch+1}/{epochs} | Loss: {loss:.4f}")
+
+Z1_test = np.dot(X_test, W1) + b1
+A1_test = sigmoid(Z1_test)
+Z2_test = np.dot(A1_test, W2) + b2
+A2_test = softmax(Z2_test)
+
+y_pred = np.argmax(A2_test, axis=1)
+y_true = np.argmax(y_test, axis=1)
+accuracy = np.mean(y_pred == y_true)
+
+print("\nTest Accuracy:", accuracy)
+
+plt.figure(figsize=(8,5))
+plt.plot(losses, color='blue')
+plt.title("Loss Curve")
+plt.xlabel("Epochs")
+plt.ylabel("Loss")
+plt.show()
