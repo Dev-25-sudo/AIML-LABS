@@ -9,6 +9,8 @@ from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 import seaborn as sns
+import pandas as pd
+import numpy as np
 
 # Step 2: Load MNIST dataset from TensorFlow
 (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
